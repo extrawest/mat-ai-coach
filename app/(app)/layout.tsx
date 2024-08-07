@@ -3,7 +3,7 @@
 import axios from "axios";
 import { useAtom } from "jotai";
 import { useEffect } from "react"
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import Navbar from "@/components/Navbar"
 import { Assistant, UserThread } from "@prisma/client";
 import { assistantAtom, userThreadAtom } from "@/atoms";
@@ -73,6 +73,7 @@ export default function AppLayout({
 		<div className="flex flex-col w-full h-full">
 			<Navbar />
 			{children}
+			<Toaster />
 		</div>
   )
 }
