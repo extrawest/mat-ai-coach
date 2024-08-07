@@ -15,7 +15,7 @@ export async function POST (req: NextRequest) {
 	});
 
 	try {
-		const run = openai.beta.threads.runs.create(threadId, {
+		const run = await openai.beta.threads.runs.create(threadId, {
 			assistant_id: assistantId
 		});
 

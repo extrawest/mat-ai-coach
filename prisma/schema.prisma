@@ -11,8 +11,6 @@ generator client {
 model Assistant {
   id          String   @id @default(uuid())
   assistantId String   @unique
-  threadId    String
-  createdAt   DateTime @default(now())
 }
 
 model UserThread {

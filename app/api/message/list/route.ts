@@ -16,9 +16,9 @@ export async function POST(req: Request) {
 	});
 
 	try {
-		const messages = await openai.beta.threads.messages.list(threadId);
+		const response = await openai.beta.threads.messages.list(threadId);
 
-		return NextResponse.json({ messages, success: true}, { status: 200 })
+		return NextResponse.json({ messages: response.data, success: true}, { status: 200 })
 	} catch(e) {
 		console.error(e);
 		return NextResponse.json({ error: "Somethind went wrong", success: false }, { status: 500 })
