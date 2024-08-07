@@ -3,21 +3,37 @@ import axios from 'axios';
 import { useAtom } from 'jotai';
 import toast from "react-hot-toast";
 import { assistantAtom, userThreadAtom } from '@/atoms';
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Message } from "openai/resources/beta/threads/messages";
 import { Run } from 'openai/resources/beta/threads/runs/runs.mjs';
 
 const POLLING_FREQUENCY_MS = 1000;
 
+const usePrevious = <T extends any>(value: T): T | undefined => {
+  const ref = useRef<T>();
+  useEffect(() => {
+    ref.current = value;
+  });
+  return ref.current;
+};
+
 function ChatPage() {
 	const [userThread] = useAtom(userThreadAtom);
 	const [assistant] = useAtom(assistantAtom);
 
+	const scrollableChatRef = useRef<HTMLDivElement>(null);
 	const [fetching, setFetching] = useState(false);
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [message, setMessage] = useState("");
 	const [sending, setSending] = useState(false);
 	const [pollingRun, setPollingRun] = useState(false);
+	const prevMessages = usePrevious(messages);
+
+  useEffect(() => {
+    if (messages.length && !prevMessages?.length) {
+      scrollToBottom();
+    }
+  }, [messages, prevMessages])
 
 	const fetchMessages = useCallback(
 		async () => {
@@ -60,6 +76,25 @@ function ChatPage() {
 
 		return () => clearInterval(intervalId);
 	}, [fetchMessages]);
+
+	const scrollToBottom = () => {
+    if (scrollableChatRef.current) {
+      scrollableChatRef.current.scrollTo({
+        top: scrollableChatRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages.length]);
+
+	useEffect(() => {
+    if (messages.length && !prevMessages?.length) {
+      scrollToBottom();
+    }
+  }, [messages, prevMessages])
 
 	const startRun = async (threadId: string, assistantId: string): Promise<string> => {
 		try {
@@ -108,6 +143,7 @@ function ChatPage() {
 					clearInterval(intervalId);
 					setPollingRun(false);
 					fetchMessages();
+					scrollToBottom();
 					return;
 				} else if (run.status === "failed") {
 					clearInterval(intervalId);
@@ -161,12 +197,13 @@ function ChatPage() {
 			toast.error("Failed to send message.");
 		} finally {
 			setSending(false);
+			scrollToBottom();
 		}
 	}
 
 	return (
 		<div className="w-screen h-[calc(100vh-64px)] flex flex-col bg-black text-white">
-			<div className="flex-grow overflow-y-scroll p-8 space-y-2">
+			<div className="flex-grow overflow-y-scroll p-8 space-y-2" ref={scrollableChatRef}>
 				{fetching && messages.length === 0 && (
 					<div className="text-center font-bold">Fetching....</div>
 				)}
