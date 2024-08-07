@@ -11,8 +11,6 @@ export async function POST(request: Request) {
 
   const response = await request.json();
 
-  console.log(response);
-
   const { id, sendNotifications, challengeId } = response;
 
   if (!id || sendNotifications === undefined || !challengeId) {
