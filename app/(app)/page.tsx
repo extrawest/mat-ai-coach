@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useAtom } from 'jotai';
 import toast from "react-hot-toast";
 import { assistantAtom, userThreadAtom } from '@/atoms';
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { FormEventHandler, useCallback, useEffect, useRef, useState } from 'react'
 import { Message } from "openai/resources/beta/threads/messages";
 import { Run } from 'openai/resources/beta/threads/runs/runs.mjs';
 
@@ -22,7 +22,7 @@ function ChatPage() {
 	const [assistant] = useAtom(assistantAtom);
 
 	const scrollableChatRef = useRef<HTMLDivElement>(null);
-	const [fetching, setFetching] = useState(false);
+	const [fetching, setFetching] = useState(true);
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [message, setMessage] = useState("");
 	const [sending, setSending] = useState(false);
@@ -38,9 +38,7 @@ function ChatPage() {
 	const fetchMessages = useCallback(
 		async () => {
 			if (!userThread) return;
-	
-			setFetching(true);
-	
+		
 			try {
 				const response = await axios.post<{ success: true, error?: string, messages?: Message[] }>(
 					"/api/message/list",
@@ -49,6 +47,7 @@ function ChatPage() {
 	
 				if (!response.data.success || !response.data.messages) {
 					console.error(response.data.error ?? "Unknown error.");
+					setFetching(false);
 					return;
 				}
 		
@@ -60,13 +59,14 @@ function ChatPage() {
 					const { content } = message;
 					return content[0]?.type === "text" && content[0]?.text?.value.trim() !== ""
 				});
-		
-				setMessages(newMessages);
-				setFetching(false);
+				if (newMessages) {
+					setMessages(newMessages);
+				}
 			} catch(e) {
 				console.error(e);
-				setFetching(false);
 				setMessages([]);
+			} finally {
+				setFetching(false);
 			}
 		}, [userThread]
 	);
@@ -161,7 +161,8 @@ function ChatPage() {
 		return () => clearInterval(intervalId);
 	};
 
-	const sendMessage = async () => {
+	const sendMessage: FormEventHandler<any> | undefined = async (e) => {
+		e.preventDefault();
 		if (!userThread || sending || !assistant) {
 			toast.error("Failed to send message");
 			return;
@@ -230,22 +231,23 @@ function ChatPage() {
 				))} 
 			</div>
 			<div className="mt-auto p-4 bg-gray-800">
-				<div className="flex items-center bg-white p-2">
-					<input
-						type="text"
-						className="flex-grow bg-transparent text-black focus:outline-none"
-						placeholder="Message..."
-						value={message}
-						onChange={(e) => setMessage(e.target.value)}
-					/>
-					<button
-						className="ml-4 bg-yellow-500 text-white px-4 py-2 rounded-full focus:outline-none disabled:bg-yellow-700"
-						disabled={!userThread?.threadId || !assistant || sending || !message.trim()}
-						onClick={sendMessage}
-					>
-						{ sending ? "Sending..." : pollingRun ? "Polling Run..." : "Send" }
-					</button>
-				</div>
+				<form onSubmit={sendMessage}>
+					<div className="flex items-center bg-white p-2">
+						<input
+							type="text"
+							className="flex-grow bg-transparent text-black focus:outline-none"
+							placeholder="Message..."
+							value={message}
+							onChange={(e) => setMessage(e.target.value)}
+						/>
+						<button
+							className="ml-4 bg-yellow-500 text-white px-4 py-2 rounded-full focus:outline-none disabled:bg-yellow-700"
+							disabled={!userThread?.threadId || !assistant || sending || !message.trim()}
+						>
+							{ sending ? "Sending..." : pollingRun ? "Polling Run..." : "Send" }
+						</button>
+					</div>
+				</form>
 			</div>
 		</div>
 	)
