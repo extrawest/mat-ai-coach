@@ -4,7 +4,7 @@ A NextJS-based AI fitness coaching application.
 
 ## Demo
 
-https://github.com/user-attachments/assets/27267091-17a7-434c-85cb-70493ce961be
+https://github.com/user-attachments/assets/3770eeda-3d7c-469b-b024-a6f663069e67
 
 ## Preview
 
